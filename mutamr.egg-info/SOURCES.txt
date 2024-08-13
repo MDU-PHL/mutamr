@@ -1,0 +1,13 @@
+README.md
+setup.py
+mutamr/CustomLog.py
+mutamr/Fastq2vcf.py
+mutamr/__init__.py
+mutamr/mutamr.py
+mutamr.egg-info/PKG-INFO
+mutamr.egg-info/SOURCES.txt
+mutamr.egg-info/dependency_links.txt
+mutamr.egg-info/entry_points.txt
+mutamr.egg-info/not-zip-safe
+mutamr.egg-info/requires.txt
+mutamr.egg-info/top_level.txt

@@ -1,0 +1,2 @@
+[console_scripts]
+mutamr = mutamr.mutamr:main
