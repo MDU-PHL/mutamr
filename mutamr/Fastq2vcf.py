@@ -54,7 +54,7 @@ class Fastq2Vcf(object):
             logger.info(f"{proc.stdout}")
             return True
         else:
-            logger.critical(f"{cmd} failed. The following error was encountered : {proc.stderr}")
+            logger.critical(f"{cmd} failed. The following error was encountered : {proc.stderr} | {proc.stdout}")
             raise SystemExit
 
     def align(self,r1,r2,seq_id,ref,threads,rams, tmp,keep = False) -> bool:
@@ -98,10 +98,10 @@ samclip --max 10 --ref {ref}.fai | samtools sort -n -l 0 --threads {cpu} -m {ram
         self.run_cmd(cmd = idx)
         return True
     
-    def delly(self,ref, seq_id) -> bool:
+    def delly(self,ref, seq_id, threads) -> bool:
 
         logger.info(f"Running delly")
-        delly = f"delly call -t DEL -g {ref} {seq_id}/{seq_id}.bam -o {seq_id}/{seq_id}.delly.bcf"
+        delly = f"OMP_NUM_THREADS={threads} delly call -t DEL -g {ref} {seq_id}/{seq_id}.bam -o {seq_id}/{seq_id}.delly.bcf"
         gz = f"bcftools view -c 2 {seq_id}/{seq_id}.delly.bcf | bcftools view -e '(INFO/END-POS)>=100000' -Oz -o {seq_id}/{seq_id}.delly.vcf.gz"
         idx = f"bcftools index {seq_id}/{seq_id}.delly.vcf.gz"
 
@@ -130,7 +130,7 @@ samclip --max 10 --ref {ref}.fai | samtools sort -n -l 0 --threads {cpu} -m {ram
             logger.info(f"Annotating vcf file")
             self.run_cmd(cmd=snpeff)
             self.run_cmd(cmd = f"bgzip {seq_id}/{seq_id}.annot.vcf")
-            self.run_cmd(idx = f"bcftools index {seq_id}/{seq_id}.annot.vcf.gz")
+            self.run_cmd(cmd = f"bcftools index {seq_id}/{seq_id}.annot.vcf.gz")
         else:
             logger.info(f"Cannot annotate the file {seq_id}.concat.vcf.gz - as it appears that snpEff is not corrctly installed.")
         
@@ -143,9 +143,9 @@ samclip --max 10 --ref {ref}.fai | samtools sort -n -l 0 --threads {cpu} -m {ram
         fls = sorted(pathlib.Path(f"{seq_id}").glob(f"{seq_id}*"))
         for fl in fls:
 
-            if f"{fl}" != f"{target}":
+            if f"{target}" not in f"{fl}":
                 logger.info(f"Will now remove {fl}")
-                # self.run_cmd(cmd = f"rm -f {fl}")
+                self.run_cmd(cmd = f"rm -f {fl}")
 
     def create_output_dir(self,seq_id, force = False) -> bool:
 
@@ -166,7 +166,7 @@ samclip --max 10 --ref {ref}.fai | samtools sort -n -l 0 --threads {cpu} -m {ram
             self.create_output_dir(seq_id=self.seq_id, force= self.force)
             self.align(r1 = self.read1, r2= self.read2, seq_id=self.seq_id, ref = self.reference, threads= self.threads, rams = self.ram, tmp=self.tmp)
             self.freebayes(seq_id=self.seq_id, ref= self.reference, mindepth= self.mindepth, minfrac=self.minfrac, threads = self.threads)
-            self.delly(ref = self.reference, seq_id= self.seq_id)
+            self.delly(ref = self.reference, seq_id= self.seq_id, threads = self.threads)
             self.combine_vcf(seq_id= self.seq_id)
             return self.annotate(seq_id=self.seq_id)
 
