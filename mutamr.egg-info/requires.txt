@@ -1,6 +1,0 @@
-pandas
-xlsxwriter
-psutil
-tqdm
-requests
-pytest
