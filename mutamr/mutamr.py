@@ -1,6 +1,6 @@
 import argparse, sys, pathlib, tempfile
 from distutils.command.install_egg_info import to_filename
-from Fastq2vcf import Fastq2Vcf
+from .Fastq2vcf import Fastq2Vcf
 
 
 
