@@ -62,13 +62,13 @@ def set_parsers():
     parser_sub_wgs.add_argument(
         "--reference",
         "-r",
-        help="Reference to use for alignment not required if you use --mtb",
+        help="Reference to use for alignment. Not required if using --mtb",
         default = ""
     )
     parser_sub_wgs.add_argument(
         "--annotation_species",
         "-a",
-        help="Name of species for annotation - needs to be a snpEff annotation config.",
+        help="Name of species for annotation - needs to be a snpEff annotation config. Not required if using --mtb",
         default = ""
     )
     parser_sub_wgs.add_argument(

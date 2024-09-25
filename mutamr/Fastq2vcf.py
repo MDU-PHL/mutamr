@@ -8,9 +8,9 @@ class Fastq2Vcf(object):
     def __init__(self,
                  read1,
                  read2,
-                 threads,
-                 ram,
-                 seq_id,
+                 threads=8,
+                 ram= 8,
+                 seq_id = "mutamr",
                  reference = "",
                  annotation = "",
                  keep = True,
@@ -18,7 +18,7 @@ class Fastq2Vcf(object):
                  mindepth = 20,
                  minfrac = 0.1,
                  force = False,
-                 tmp = ""
+                 tmp = f"{pathlib.Path(tempfile.gettempdir())}"
                  ):
         
         self.read1 = read1
