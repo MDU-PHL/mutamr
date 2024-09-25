@@ -51,3 +51,38 @@ When designing `mutAMR` I have made some assumptions about the setup, inputs and
 * If installed, `delly` will be used to identify large deletions. If not installed - then small deletions will be reported as detected by `freebayes`. A combined vcf file will be generated, combining the variants detected by `freebayes` and `delly`.
 * Annotation will be undertaken using `snpEff`, to allow for simple integration with the WHO _M. tuberculosis_ catalogue V2.
 
+## Installation
+
+### Conda - recommended
+
+It is highly recommended to install `mutAMR` using `conda` in order to prevent dependency clashes and other issues that may arise - especially if using a share computing resource.
+
+`mutAMR` can be installed as a conda package with all dependencies.
+
+```
+conda create -n mutamr mutamr
+```
+
+Or you can download the `environment.yml` file from the root of this repository and 
+
+```
+conda env create -f environment.yml
+```
+
+### Manual installation
+
+At a minimum you need to make sure that the required dependencies have been installed. The versions specified below have all been confirmed to work together and not cause any installation issues or unexpected behaviour. If you decide to use other versions - please be aware that behaviour may not be as described. For example `samtools` version 1.21 can cause issues, whilst version 1.20 does not.
+
+#### Required
+
+* python ==3.10
+* samtools ==1.20 
+* bcftools ==1.20
+* freebayes ==1.3.8
+* bwa mem ==0.7.18
+
+#### Optional
+* delly ==1.2.8
+* snpEff ==5.2
+
+
