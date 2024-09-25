@@ -4,9 +4,9 @@
 
 **Why oh why another variant detection tool? I hear you ask.** There are many high quality tools for reporting of variants from microbial paired-end sequencing, including but not limited to [snippy](https://github.com/tseemann/snippy) and [gatk](https://gatk.broadinstitute.org/hc/en-us). If you require SNP calling for phylogentics or core genome analysis I recommend that you use these tools. 
 
-However, there are cases where a simple vcf is all that is required, in particular for use in identification of acquired AMR mechanims. In addition, many tools which identify SNPs or deletions for AMR are part of large scale tools which, whilst are high quality and extremely useful, they can be complex to install, due to dependencies,and and run.
+However, there are cases where a simple vcf is all that is required, in particular for use in identification of acquired AMR mechanims. In addition, many tools which identify SNPs or deletions for AMR are part of large scale tools which, whilst are high quality and extremely useful, they can be complex to install, due to dependencies and run.
 
-`mutAMR` was written to address a very simple need - generation of a single file as output that can be used for identification of variant for AMR. It is designed to be a very simple tool - that simply and specifically generates a vcf file from paired-end illumina reads. It is a stripped down tool - using [bwa-mem](https://github.com/lh3/bwa), [freebayes](https://github.com/freebayes/freebayes), [delly](https://github.com/dellytools/delly) and [samtools](http://www.htslib.org/) and is inspired by [snippy](https://github.com/tseemann/snippy).
+`mutAMR` was written to address a very simple need - generation of a single file as output that can be used for identification of variant for AMR. It is designed to be a very lightweight tool - that simply and specifically generates a vcf file from paired-end illumina reads. It is a stripped down tool - using [bwa-mem](https://github.com/lh3/bwa), [freebayes](https://github.com/freebayes/freebayes), [delly](https://github.com/dellytools/delly) and [samtools](http://www.htslib.org/) and is inspired by [snippy](https://github.com/tseemann/snippy).
 
 Further functions may be introduced overtime (for example variant calling amplicon based sequencing or for specific genes) if others do not write a more useful tool!!
 
