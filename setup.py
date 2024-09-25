@@ -7,12 +7,6 @@ from os import environ
 import logging
 import mutamr
 
-# logging.basicConfig(level=environ.get("LOGLEVEL", "INFO"))
-
-# if version_info <= (3, 0):
-#     logging.fatal("Sorry, requires Python 3.x, not Python 2.x\n")
-#     exit(1)
-
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -28,10 +22,10 @@ setup(
     author_email="kristyhoran15@gmail.com",
     maintainer="Kristy Horan",
     maintainer_email="kristyhoran15@gmail.com",
-    python_requires=">=3.8, <4",
+    python_requires=">=3.10, <4",
     packages=find_packages(exclude=["contrib", "docs", "tests"]),
     zip_safe=False,
-    install_requires=["pandas","xlsxwriter","psutil","tqdm","requests","pytest"],
+    install_requires=["pytest"],
     test_suite="nose.collector",
     tests_require=["nose", "pytest","psutil"],
     entry_points={
@@ -50,5 +44,5 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
-    package_data={"tbtamr": ["db/*","dep_config.json"]}
+    package_data={"mutamr": ["references/*"]}
 )
