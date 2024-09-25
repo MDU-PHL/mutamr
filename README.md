@@ -85,4 +85,51 @@ At a minimum you need to make sure that the required dependencies have been inst
 * delly ==1.2.8
 * snpEff ==5.2
 
+## Using `mutAMR`
 
+`mutAMR` can be used from the commandline - or as an importable package to run as part of another python package.
+
+### Import
+
+Below is an example of using `mutAMR` as part of an another python script or tool
+
+**Required arguments**
+
+* read1
+* read2
+
+**Optional**
+
+* reference genome (if you are using `mutAMR` for _M. tuberculosis_ you can simple set `mtb=True` no need to use this argument)
+    * in fasta format
+* the annotation species for `snpEff`  (if you are using `mutAMR` for _M. tuberculosis_ you can simple set `mtb=True` no need to use this argument)
+* threads
+    * default is set to 8
+* ram
+    * default is set to 8
+* keep - if you would like to keep all intermediary file set to True
+    * default False
+* mtb - boolean argument - if set to True reference and annotation species will be automatically set
+    * default is False
+* 
+```
+from mutamr import Fastq2vcf
+
+read1 = "/path/read1.fastq.gz"
+read1 = "/path/read2.fastq.gz"
+threads=8
+ram = 8
+seq_id= "sample_name"
+mtb = True
+
+V = Fastq2vcf.Fastq2Vcf(
+                read1 = read1,
+                read2= read2,
+                threads=threads,
+                ram = ram,
+                seq_id= seq_id,
+                keep = keep,
+                mtb = mtb
+                )
+vcf = V.run()
+```
