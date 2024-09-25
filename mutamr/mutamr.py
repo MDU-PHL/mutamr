@@ -66,6 +66,12 @@ def set_parsers():
         default = ""
     )
     parser_sub_wgs.add_argument(
+        "--annotation_species",
+        "-a",
+        help="Name of species for annotation - needs to be a snpEff annotation config.",
+        default = ""
+    )
+    parser_sub_wgs.add_argument(
         '--min_depth',
         '-md',
         help= f"Minimum depth to call a variant",

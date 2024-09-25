@@ -1,4 +1,4 @@
-import subprocess,pathlib,os, sys
+import subprocess,pathlib,os, sys,logging
 from .CustomLog import logger
 
 
@@ -12,6 +12,7 @@ class Fastq2Vcf(object):
                  ram,
                  seq_id,
                  reference = "",
+                 annotation = "",
                  keep = True,
                  mtb = False,
                  mindepth = 20,
@@ -22,18 +23,34 @@ class Fastq2Vcf(object):
         
         self.read1 = read1
         self.read2 = read2
+        self.mtb = mtb
         self.threads = int(threads)
         self.ram = int(ram)
         self.seq_id = seq_id if seq_id != "" else 'mutamr'
-        self.reference = reference = f"{pathlib.Path(__file__).parent / 'references'/ 'Mtb_NC000962.3.fa'}" if mtb else reference
+        self.reference = f"{pathlib.Path(__file__).parent / 'references'/ 'Mtb_NC000962.3.fa'}" if mtb else reference
+        self.species = "Mycobacterium_tuberculosis_h37rv" if mtb else annotation
         self.keep = keep
-        self.mtb = mtb
         self.mindepth= mindepth
         self.minfrac = minfrac
         self.force = force
         self.tmp = tmp
         self.essential_tools = ['bwa', 'freebayes-parallel', 'samtools', 'bcftools', 'samclip']
         self.optional_tools = ['delly', 'snpEff']
+        self.to_remove = [
+            "ref.txt",
+            f"{self.seq_id}.bam",
+            f"{self.seq_id}.raw.snps.vcf",
+            f"{self.seq_id}.delly.vcf",
+            f"{self.seq_id}.delly.bcf",
+            f"{self.seq_id}.concat.vcf",
+            f"{self.seq_id}.snps.vcf"
+        ]
+        self.create_output_dir(seq_id=self.seq_id, force= self.force)
+        fh = logging.FileHandler(f'{seq_id}/mutamr.log')
+        fh.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('[%(levelname)s:%(asctime)s] %(message)s', datefmt='%Y-%m-%d %I:%M:%S %p') 
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
 
     def check_file(self,pth):
 
@@ -56,7 +73,7 @@ class Fastq2Vcf(object):
             logger.info(f"{proc.stdout}")
             return True
         else:
-            logger.critical(f"{cmd} failed. The following error was encountered : {proc.stderr} | {proc.stdout}")
+            logger.warning(f"{cmd} failed. The following error was encountered : {proc.stderr} | {proc.stdout}")
             return False
 
 
@@ -88,6 +105,16 @@ class Fastq2Vcf(object):
         return True
 
 
+
+    def get_stats(self, bam) -> bool:
+        
+        
+        cmd = f"samtools coverage {bam} > {self.seq_id}/{self.seq_id}_stats.txt"
+
+        self.run_cmd(cmd = cmd)
+
+        return True
+
     def align(self,r1,r2,seq_id,ref,threads,rams, tmp,keep = False) -> bool:
 
         logger.info("Generating alignment using bwa mem.")
@@ -95,15 +122,16 @@ class Fastq2Vcf(object):
         ram = int(1000*rams/cpu)
         tmp_dir = f'-T {tmp}' if tmp != '' else ''
         bwa = f"bwa mem -T 50 -Y -M -R '@RG\\tID:{seq_id}\\tSM:{seq_id}' -t {cpu} {ref} {r1} {r2} | \
-samclip --max 10 --ref {ref}.fai | samtools sort -n -l 0 --threads {cpu} -m {ram}M {tmp_dir} \
-| samtools fixmate -m - - | samtools sort -l 0  --threads {cpu} -m {ram}M {tmp_dir} \
-| samtools markdup {tmp_dir} -r -s - - > {seq_id}/{seq_id}.bam"
+samclip --max 10 --ref {ref}.fai | samtools sort -n -l 0 -@ {cpu} -m {ram}M {tmp_dir} | \
+samtools fixmate -m - - | samtools sort -l 0 -@ {cpu} -m {ram}M {tmp_dir} | \
+samtools markdup {tmp_dir} -r -s - - > {seq_id}/{seq_id}.bam"
         
         bproc = self.run_cmd(cmd = bwa)
         if bproc:
             logger.info(f"Indexing bam")
             idx = self.run_cmd(cmd = f"samtools index {seq_id}/{seq_id}.bam")
             if idx:
+                self.get_stats(bam = f"{seq_id}/{seq_id}.bam")
                 return True
         return False
 
@@ -130,7 +158,7 @@ samclip --max 10 --ref {ref}.fai | samtools sort -n -l 0 --threads {cpu} -m {ram
             if self.run_cmd(cmd = fltr):
                 logger.info(f"Indexing vcf")
                 if self.run_cmd(cmd = idx):
-                    return "{seq_id}/{seq_id}.snps.vcf.gz"
+                    return f"{seq_id}/{seq_id}.snps.vcf.gz"
         
         logger.critical(f"Freebayes did not complete successfully! Please check log file and try again.")
         raise SystemExit
@@ -155,43 +183,45 @@ samclip --max 10 --ref {ref}.fai | samtools sort -n -l 0 --threads {cpu} -m {ram
         logger.info(f"Combining vcf files")
         concat = f"bcftools concat -aD {seq_id}/{seq_id}.delly.vcf.gz {seq_id}/{seq_id}.snps.vcf.gz | bcftools norm -m -both | bcftools view -W -Oz -o {seq_id}/{seq_id}.concat.vcf.gz"
         self.run_cmd(cmd = concat)
-        return  {seq_id}/{seq_id}.concat.vcf.gz
+        return  f"{seq_id}/{seq_id}.concat.vcf.gz"
     
     def annotate(self, vcf) -> str:
         logger.info(f"Wrangling snpEff DB")
         p = os.environ.get('CONDA_PREFIX').strip('bin')
         cfg = sorted(pathlib.Path(p,'share').glob('snpeff*/snpEff.config'))
-        spc = "Mycobacterium_tuberculosis_h37rv" if self.mtb else ""
         if cfg != []:
             cfg_path = cfg[0]
-            snpeff =f"snpEff ann -dataDir . -c {cfg_path} -noLog -noStats {spc} {vcf} > {seq_id}/{seq_id}.annot.vcf"
+            snpeff =f"snpEff ann -dataDir . -c {cfg_path} -noLog -noStats {self.species} {vcf} > {self.seq_id}/{self.seq_id}.annot.vcf"
             logger.info(f"Annotating vcf file")
             self.run_cmd(cmd=snpeff)
-            self.run_cmd(cmd = f"bgzip {seq_id}/{seq_id}.annot.vcf")
-            self.run_cmd(cmd = f"bcftools index {seq_id}/{seq_id}.annot.vcf.gz")
-            return f"{seq_id}/{seq_id}.annot.vcf.gz"
+            self.run_cmd(cmd = f"bgzip -f {self.seq_id}/{self.seq_id}.annot.vcf")
+            self.run_cmd(cmd = f"bcftools index {self.seq_id}/{self.seq_id}.annot.vcf.gz")
+            return f"{self.seq_id}/{self.seq_id}.annot.vcf.gz"
         else:
-            logger.info(f"Cannot annotate the file {seq_id}.concat.vcf.gz - as it appears that snpEff is not corrctly installed.")
-            return vcf
-        
+            logger.info(f"Cannot annotate the file {self.seq_id}.concat.vcf.gz - as it appears that snpEff is not corrctly installed.")
+            return vcf      
+
     
     def clean_up(self, vcf):
         
         target = f"{vcf}"
-
-        fls = sorted(pathlib.Path(f"{seq_id}").glob(f"{seq_id}*"))
-        for fl in fls:
-
-            if f"{target}" not in f"{fl}":
-                logger.info(f"Will now remove {fl}")
-                self.run_cmd(cmd = f"rm -f {fl}")
+        logger.info(f"Will now clean up directory, keeping {target}.")
+        
+        for fl in self.to_remove:
+            fls = [f"{f}" for f in sorted(pathlib.Path(f"{self.seq_id}").glob(f"{fl}*"))]
+            if f"{fl}" not in f"{target}" and fls != []:
+                logger.warning(f"Will now remove {' '.join(fls)}")
+                rm = f"rm -f {' '.join(fls)}"
+                # logger.warning(f"Running : {rm}")
+                self.run_cmd(cmd = rm)
 
     def create_output_dir(self,seq_id, force = False) -> bool:
 
         cmd = f"mkdir -p {seq_id}"
-        if pathlib.Path(f"{seq_id}/{seq_id}.concat.vcf.gz").exists() and not force:
-            logger.critical(f"{seq_id}/{seq_id}.concat.vcf.gz already exists. If you would like to over write please re-run with --force.")
+        if pathlib.Path(f"{seq_id}").exists() and not force:
+            logger.critical(f"{seq_id} already exists. If you would like to over write please re-run with --force.")
             raise SystemExit
+        
         logger.info(f"Will now create directory for {seq_id}")
         proc = self.run_cmd(cmd = cmd)
         if proc:
@@ -204,17 +234,18 @@ samclip --max 10 --ref {ref}.fai | samtools sort -n -l 0 --threads {cpu} -m {ram
         self.check_installation()
 
         if self.check_file(pth=self.reference) and self.check_file(pth = self.read1) and self.check_file(pth=self.read2) and self.seq_id != "":
-            self.create_output_dir(seq_id=self.seq_id, force= self.force)
+            
             if self.align(r1 = self.read1, r2= self.read2, seq_id=self.seq_id, ref = self.reference, threads= self.threads, rams = self.ram, tmp=self.tmp):
                 logger.info(f"Alignment was successful!")
                 vcf = self.freebayes(seq_id=self.seq_id, ref= self.reference, mindepth= self.mindepth, minfrac=self.minfrac, threads = self.threads)
                 logger.info(f"Freebayes was successful!!")
                 if self.delly(ref = self.reference, seq_id= self.seq_id, threads = self.threads):
                     vcf = self.combine_vcf(seq_id= self.seq_id)
+                vcf = self.annotate(vcf = vcf)
                 if not self.keep:
                     self.clean_up(vcf = vcf)
-                return self.annotate(vcf = vcf)
-
+                
+                return vcf
         else:
             logger.critical(f"Something has gone wrong! Please check your inputs and try again.")
             raise SystemExit
