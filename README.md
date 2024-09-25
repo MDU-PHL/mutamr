@@ -33,3 +33,21 @@ When designing `mutAMR` I have made some assumptions about the setup, inputs and
 3. `delly` is installed properly and you want to detect large deletions in your sequences. If not - only small deletions will be detected by freebayes - which is capable of accurately recovering deletions up to ~50-75 bp.
 
 4. `snpEff` is installed properly with available configs. If not - no annotation will occur, you will need to annotate your `vcf` separately.
+
+
+## What is `mutAMR` NOT?
+
+`mutAMR` is NOT a
+
+* Pipeline to provide hands off interpretations for AMR. If you require a tool like that - please use `mykrobe` or `TB-Profiler`
+* Tool designed for generation of alignments suitable for phylogenetic or core-genome analysis. If you require a tool like this - please use [`snippy`](https://github.com/tseemann/snippy) 
+
+## Dependencies
+
+`mutAMR` is a python package that runs
+
+* `bwa-mem` to align reads to reference genome
+* `freebayes` to identify variants. Note variants will be identified down to the minimum fraction designated by the user (default 0.1), see Running mutAMR.
+* If installed, `delly` will be used to identify large deletions. If not installed - then small deletions will be reported as detected by `freebayes`. A combined vcf file will be generated, combining the variants detected by `freebayes` and `delly`.
+* Annotation will be undertaken using `snpEff`, to allow for simple integration with the WHO _M. tuberculosis_ catalogue V2.
+
