@@ -12,7 +12,7 @@ Further functions may be introduced overtime (for example variant calling amplic
 
 ## Assumptions
 
-When designing `mutAMR` I have made the assumptions about the setup, inputs and user requirements.
+When designing `mutAMR` I have made some assumptions about the setup, inputs and user requirements.
 
 1. Paired-end fastq files
     
