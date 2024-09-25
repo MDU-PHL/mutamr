@@ -2,7 +2,7 @@
 
 ## Motivation
 
-Why another variant detection tool? There are many high quality tools for reporting of variants from microbial paired-end sequencing, including but not limited to [snippy](https://github.com/tseemann/snippy) and [gatk](https://gatk.broadinstitute.org/hc/en-us). If you require SNP calling for phylogentics or core genome analysis I recommend that you use these tools. 
+**Why oh why another variant detection tool? I hear you ask.** There are many high quality tools for reporting of variants from microbial paired-end sequencing, including but not limited to [snippy](https://github.com/tseemann/snippy) and [gatk](https://gatk.broadinstitute.org/hc/en-us). If you require SNP calling for phylogentics or core genome analysis I recommend that you use these tools. 
 
 However, there are cases where a simple vcf is all that is required, in particular for use in identification of acquired AMR mechanims. In addition, many tools which identify SNPs or deletions for AMR are part of large scale tools which, whilst are high quality and extremely useful, they can be complex to install, due to dependencies,and and run.
 
