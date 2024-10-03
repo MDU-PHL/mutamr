@@ -1,6 +1,6 @@
-import subprocess,pathlib,os, sys,logging
+import subprocess,pathlib,os, sys,logging,tempfile
 from .CustomLog import logger
-
+from .Utils import check_installation
 
 
 class Fastq2Vcf(object):
@@ -34,8 +34,6 @@ class Fastq2Vcf(object):
         self.minfrac = minfrac
         self.force = force
         self.tmp = tmp
-        self.essential_tools = ['bwa', 'freebayes-parallel', 'samtools', 'bcftools', 'samclip']
-        self.optional_tools = ['delly', 'snpEff']
         self.to_remove = [
             "ref.txt",
             f"{self.seq_id}.bam",
@@ -52,14 +50,13 @@ class Fastq2Vcf(object):
         fh.setFormatter(formatter)
         logger.addHandler(fh)
 
-    def check_file(self,pth):
+    def check_file(self,pth) ->bool:
 
         logger.info(f"Checking {pth} exists")
         if pathlib.Path(pth).exists():
 
             return True
         else:
-
             logger.critical(f"{pth} does not exist. Please try again.")
         raise SystemExit
 
@@ -77,32 +74,9 @@ class Fastq2Vcf(object):
             return False
 
 
-    def check_tool(self, tool, essential = True) -> bool:
+    
 
-        paths = os.getenv('PATH').split(':')
-        for pth in paths:
-            d = pathlib.Path(pth)
-            tl = d /f"{tool}"
-            if tl.exists():
-                logger.info(f"{tool} installed.")
-                return True
-        
-        
-        if essential:
-            logger.critical(f"{tool} could not be found - please check your installation and try again. mutAMR cannot be run - Exiting...")
-            sys.exit(0)
-        logger.warning(f"{tool} could not be found - please check your installation. {tool} will not be run")
-        return False
-
-    def check_installation(self) -> bool:
-
-        for tool in self.essential_tools:
-            self.check_tool(tool = tool)
-                
-        for tool in self.optional_tools:
-            self.check_tool(tool = tool, essential = False)
-
-        return True
+    
 
 
 
@@ -150,7 +124,7 @@ samtools markdup {tmp_dir} -r -s - - > {seq_id}/{seq_id}.bam"
         logger.info("Running freebayes for SNP detection.")
         fb = f"freebayes-parallel {seq_id}/ref.txt {threads} -q 13 -m 60 -f {ref} -F {minfrac} --haplotype-length -1 {seq_id}/{seq_id}.bam > {seq_id}/{seq_id}.raw.snps.vcf"
         # fb = f"freebayes "
-        fltr = f"bcftools view -c 1 {seq_id}/{seq_id}.raw.snps.vcf | bcftools norm -f {ref} | bcftools filter -e 'FMT/DP<{mindepth}'  -Oz -o {seq_id}/{seq_id}.snps.vcf.gz"
+        fltr = f"bcftools view -c 1 {seq_id}/{seq_id}.raw.snps.vcf | bcftools norm -f {ref} | bcftools filter -e 'FMT/DP<{mindepth}' | bcftools filter -i 'INFO/SAR>0 && INFO/SAF>0' -Oz -o {seq_id}/{seq_id}.snps.vcf.gz"
         idx = f"bcftools index {seq_id}/{seq_id}.snps.vcf.gz"
         # logger.info(f"Running freebayes")
         if self.run_cmd(cmd = fb):
@@ -231,7 +205,7 @@ samtools markdup {tmp_dir} -r -s - - > {seq_id}/{seq_id}.bam"
     
     def run(self):
 
-        self.check_installation()
+        check_installation(run = True)
 
         if self.check_file(pth=self.reference) and self.check_file(pth = self.read1) and self.check_file(pth=self.read2) and self.seq_id != "":
             

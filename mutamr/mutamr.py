@@ -1,5 +1,6 @@
 import argparse, sys, pathlib, tempfile
 from .Fastq2vcf import Fastq2Vcf
+from .Utils import check_installation
 
 
 
@@ -7,6 +8,10 @@ from .Fastq2vcf import Fastq2Vcf
 mutAMR is designed to be a very simple lightweigth tool to identify variants from genomic data. 
 
 """
+
+def check():
+
+    check_installation()
 
 def run(args):
     
@@ -27,8 +32,6 @@ def run(args):
     V.run()
 
 
-def search_catalog(args):
-    pass
 
 def set_parsers():
     parser = argparse.ArgumentParser(
@@ -36,8 +39,10 @@ def set_parsers():
     )
     # parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
     
-    subparsers = parser.add_subparsers(help="Types of detection")
-    
+    subparsers = parser.add_subparsers(help="Actions")
+
+    parser_check = subparsers.add_parser('check', help='Check that dependencies are installed', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
     parser_sub_wgs = subparsers.add_parser('wgs', help='Generate vcf for identification of variants from WGS data TB.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser_sub_wgs.add_argument(
@@ -119,7 +124,11 @@ def set_parsers():
 
     
     parser_sub_wgs.set_defaults(func=run)
-    args = parser.parse_args(args=None if sys.argv[1:]  else ['--help'])
+    
+    if len(sys.argv) == 2:
+        args = parser.parse_args(['--help'])
+    else:
+        args = parser.parse_args(args=None if sys.argv[1:]  else ['--help'])
     return args
 
  
@@ -128,8 +137,12 @@ def main():
     run pipeline
     """
 
-    args = set_parsers()
-    args.func(args)
+    if len(sys.argv) > 1 and sys.argv[1] == 'check':
+        check()
+    # elif len(sys.argv) 
+    else:
+        args = set_parsers()
+        args.func(args)
     
 
 if __name__ == "__main__":
