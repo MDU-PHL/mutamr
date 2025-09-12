@@ -161,8 +161,7 @@ samtools markdup {tmp_dir} -r -s - - > {seq_id}/{seq_id}.bam"
     
     def annotate(self, vcf) -> str:
         logger.info(f"Wrangling snpEff DB")
-        p = os.environ.get('CONDA_PREFIX').strip('bin')
-        cfg = sorted(pathlib.Path(p,'share').glob('snpeff*/snpEff.config'))
+        cfg = f"{pathlib.Path(__file__).parent / 'references'/ 'snpEff.config'}"
         if cfg != []:
             cfg_path = cfg[0]
             snpeff =f"snpEff ann -dataDir . -c {cfg_path} -noLog -noStats {self.species} {vcf} > {self.seq_id}/{self.seq_id}.annot.vcf"
