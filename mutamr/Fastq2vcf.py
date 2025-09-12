@@ -160,19 +160,18 @@ samtools markdup {tmp_dir} -r -s - - > {seq_id}/{seq_id}.bam"
         return  f"{seq_id}/{seq_id}.concat.vcf.gz"
     
     def annotate(self, vcf) -> str:
-        logger.info(f"Wrangling snpEff DB")
-        cfg = f"{pathlib.Path(__file__).parent / 'references'/ 'snpEff.config'}"
-        if cfg != []:
-            cfg_path = cfg[0]
-            snpeff =f"snpEff ann -dataDir . -c {cfg_path} -noLog -noStats {self.species} {vcf} > {self.seq_id}/{self.seq_id}.annot.vcf"
+        try:
+            logger.info(f"Wrangling snpEff DB")
+            cfg = f"{pathlib.Path(__file__).parent / 'references'/ 'snpEff.config'}"
+            snpeff =f"snpEff ann -dataDir . -c {cfg} -noLog -noStats {self.species} {vcf} > {self.seq_id}/{self.seq_id}.annot.vcf"
             logger.info(f"Annotating vcf file")
             self.run_cmd(cmd=snpeff)
             self.run_cmd(cmd = f"bgzip -f {self.seq_id}/{self.seq_id}.annot.vcf")
             self.run_cmd(cmd = f"bcftools index {self.seq_id}/{self.seq_id}.annot.vcf.gz")
             return f"{self.seq_id}/{self.seq_id}.annot.vcf.gz"
-        else:
-            logger.info(f"Cannot annotate the file {self.seq_id}.concat.vcf.gz - as it appears that snpEff is not corrctly installed.")
-            return vcf      
+        except Exception as e:
+            logger.critical(f"Something went wrong with snpEff annotation : {e}")
+            raise SystemExit
 
     
     def clean_up(self, vcf):
