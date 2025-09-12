@@ -13,7 +13,7 @@ with open("README.md", "r") as f:
 
 setup(
     name="mutamr",
-    version="0.0.1",
+    version="0.0.2",
     description="Variant detection for AMR prediction",
     long_description=long_description,
     long_description_content_type="text/markdown",
